@@ -1,0 +1,36 @@
+# === Node modules ===
+node_modules/
+
+# === Build output ===
+dist/
+build/
+
+# === Logs ===
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === Env secrets ===
+backend/.env
+mobile/.env
+
+# === Prisma ===
+/backend/prisma/dev.db
+/backend/prisma/.env
+
+# === OS junk ===
+.DS_Store
+Thumbs.db
+
+# === VS Code ===
+.vscode/
+
+# === Expo ===
+mobile/.expo/
+mobile/.expo-shared/
+
+# === Generated Prisma client (optional) ===
+/backend/generated/
+
+# === IDE junk ===
+.idea/
