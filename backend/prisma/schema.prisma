@@ -14,8 +14,69 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        Int                  @id @default(autoincrement())
+  email     String               @unique
+  name      String?
+  favorites UserFavoriteMovie[]
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+}
+
+model Genre {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  movies Movie[]
+}
+
+model Director {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  movies Movie[]
+}
+
+model Actor {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  movies MovieActor[]
+}
+
+model MovieActor {
+  id       Int    @id @default(autoincrement())
+  movieId  Int
+  actorId  Int
+  movie    Movie  @relation(fields: [movieId], references: [id])
+  actor    Actor  @relation(fields: [actorId], references: [id])
+
+  @@unique([movieId, actorId]) // Avoid duplicate entries
+}
+
 model Movie {
-  id    Int    @id @default(autoincrement())
-  title String
-  genre String
+  id          Int                  @id @default(autoincrement())
+  title       String
+  slug        String               @unique
+  releaseYear Int?
+  rating      Float?
+  overview    String?
+  poster      String?
+  trailerUrl  String?
+  genreId     Int?
+  genre       Genre?               @relation(fields: [genreId], references: [id])
+  directorId  Int?
+  director    Director?            @relation(fields: [directorId], references: [id])
+  actors      MovieActor[]         // Many-to-many with Actor
+  favorites   UserFavoriteMovie[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+}
+
+model UserFavoriteMovie {
+  id      Int   @id @default(autoincrement())
+  userId  Int
+  movieId Int
+  user    User  @relation(fields: [userId], references: [id])
+  movie   Movie @relation(fields: [movieId], references: [id])
+
+  @@unique([userId, movieId]) // Prevent duplicate favorites
+  createdAt DateTime @default(now())
 }
