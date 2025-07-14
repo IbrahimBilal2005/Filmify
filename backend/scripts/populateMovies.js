@@ -12,8 +12,8 @@ function slugify(text) {
 
 const fetchAndStoreMovies = async () => {
   try {
-    for (let page = 1; page <= 5; page++) {
-      const res = await axios.get(`${TMDB_BASE_URL}/movie/popular`, {
+    for (let page = 1; page <= 15; page++) {
+      const res = await axios.get(`${TMDB_BASE_URL}/movie/top_rated`, {
         params: { api_key: TMDB_API_KEY, page }
       });
 
