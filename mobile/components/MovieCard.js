@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,11 @@ import {
   Dimensions,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useNavigation } from '@react-navigation/native';
+import { useFavorites } from '../hooks/useFavorites';
 
 const { height, width } = Dimensions.get('window');
 
@@ -19,18 +21,38 @@ const getYouTubeEmbedUrl = (url, isVisible) => {
     : null;
 };
 
-const MovieCard = ({ movie, isVisible }) => {
-  const trailerEmbedUrl = getYouTubeEmbedUrl(movie.trailerUrl, isVisible);
+const MovieCard = ({ movie, isVisible, onFavoriteChange }) => {
   const navigation = useNavigation();
+  const [actionLoading, setActionLoading] = useState(false);
+  const { isFavorite, toggleFavorite, user } = useFavorites();
+
+  const trailerEmbedUrl = getYouTubeEmbedUrl(movie.trailerUrl, isVisible);
+  const movieIsFavorite = isFavorite(movie.id);
 
   const goToDetails = () => {
     navigation.navigate('MovieDetails', { movie });
   };
 
+  const handleToggleFavorite = async () => {
+    if (!user) return;
+
+    if (actionLoading) return;
+    setActionLoading(true);
+
+    try {
+        const isNowFavorite = await toggleFavorite(movie);
+        onFavoriteChange?.(movie.id, isNowFavorite);
+    } catch (error) {
+        console.error('Toggle favorite error:', error);
+    } finally {
+        setActionLoading(false);
+    }
+};
+
+
   return (
     <ScrollView style={styles.card} contentContainerStyle={styles.content}>
       <View style={styles.inner}>
-        {/* Trailer */}
         {trailerEmbedUrl ? (
           <WebView
             source={{ uri: trailerEmbedUrl }}
@@ -46,34 +68,53 @@ const MovieCard = ({ movie, isVisible }) => {
           </View>
         )}
 
-        {/* Title */}
         <Text style={styles.title}>{movie.title}</Text>
 
-        {/* Metadata */}
         <View style={styles.metadata}>
           {movie.genre?.name && (
-            <Text style={styles.metaText}>🎬 Genre: <Text style={styles.metaValue}>{movie.genre.name}</Text></Text>
+            <Text style={styles.metaText}>
+              🎬 Genre: <Text style={styles.metaValue}>{movie.genre.name}</Text>
+            </Text>
           )}
           {movie.releaseYear && (
-            <Text style={styles.metaText}>📅 Year: <Text style={styles.metaValue}>{movie.releaseYear}</Text></Text>
+            <Text style={styles.metaText}>
+              📅 Year: <Text style={styles.metaValue}>{movie.releaseYear}</Text>
+            </Text>
           )}
           {movie.rating && (
-            <Text style={styles.metaText}>⭐ Rating: <Text style={styles.metaValue}>{movie.rating.toFixed(1)}</Text></Text>
+            <Text style={styles.metaText}>
+              ⭐ Rating: <Text style={styles.metaValue}>{movie.rating.toFixed(1)}</Text>
+            </Text>
           )}
           {movie.director?.name && (
-            <Text style={styles.metaText}>🎥 Director: <Text style={styles.metaValue}>{movie.director.name}</Text></Text>
+            <Text style={styles.metaText}>
+              🎥 Director: <Text style={styles.metaValue}>{movie.director.name}</Text>
+            </Text>
           )}
           {movie.actors?.length > 0 && (
             <Text style={styles.metaText}>
-              👥 Cast: <Text style={styles.metaValue}>{movie.actors.map(a => a.actor?.name).join(', ')}</Text>
+              👥 Cast:{' '}
+              <Text style={styles.metaValue}>
+                {movie.actors.map((a) => a.actor?.name).join(', ')}
+              </Text>
             </Text>
           )}
         </View>
 
-        {/* Buttons */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>❤️ Favorite</Text>
+          <TouchableOpacity 
+            style={[styles.button, actionLoading && styles.buttonDisabled]} 
+            onPress={handleToggleFavorite}
+            disabled={actionLoading}
+          >
+            <Text style={styles.buttonText}>
+              {actionLoading 
+                ? '⏳ Loading...' 
+                : movieIsFavorite 
+                  ? '💔 Remove Favorite' 
+                  : '❤️ Add to Favorites'
+              }
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.button} onPress={goToDetails}>
             <Text style={styles.buttonText}>ℹ️ Details</Text>
@@ -134,6 +175,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 25,
+  },
+  buttonDisabled: {
+    backgroundColor: '#333',
+    opacity: 0.6,
   },
   buttonText: {
     color: '#fff',
