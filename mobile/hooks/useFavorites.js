@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../api/supabaseClient';
 
+const API_BASE = 'http://10.0.0.130:3000'; // 👈 Update if IP changes
+
 export const useFavorites = () => {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
+  // Get Supabase user
   useEffect(() => {
     const fetchUser = async () => {
       const { data } = await supabase.auth.getSession();
@@ -14,38 +17,19 @@ export const useFavorites = () => {
     fetchUser();
   }, []);
 
+  // Fetch favorites from backend
   const fetchFavorites = useCallback(async () => {
     try {
       setLoading(true);
       if (!user) return setFavorites([]);
 
-      const { data, error } = await supabase
-        .from('UserFavoriteMovie')
-        .select(`
-          movie:movieId (
-            id, 
-            title, 
-            poster, 
-            overview, 
-            trailerUrl, 
-            genre:genreId(name), 
-            director:directorId(name), 
-            rating, 
-            releaseYear,
-            actors:MovieActor(actor:actorId(name))
-          )
-        `)
-        .eq('userId', user.id);
+      const res = await fetch(`${API_BASE}/users/${user.id}/favorites`);
+      if (!res.ok) throw new Error('Failed to fetch favorites');
 
-      if (error) {
-        console.error('Fetch favorites error:', error.message);
-        setFavorites([]);
-      } else {
-        const moviesList = data.map(entry => entry.movie).filter(Boolean);
-        setFavorites(moviesList);
-      }
+      const data = await res.json();
+      setFavorites(data);
     } catch (error) {
-      console.error('Error in fetchFavorites:', error);
+      console.error('Error fetching favorites:', error);
       setFavorites([]);
     } finally {
       setLoading(false);
@@ -57,54 +41,37 @@ export const useFavorites = () => {
     [favorites]
   );
 
-  const addToFavorites = useCallback(async (movie) => {
-    if (!user) throw new Error('User not authenticated');
-
-    try {
-      const { error } = await supabase
-        .from('UserFavoriteMovie')
-        .insert([{ userId: user.id, movieId: movie.id }]);
-
-      if (error) throw error;
-
-      setFavorites(prev => [...prev, movie]);
-    } catch (error) {
-      console.error('Error adding to favorites:', error);
-      throw error;
-    }
-  }, [user]);
-
-  const removeFromFavorites = useCallback(async (movieId) => {
-    if (!user) throw new Error('User not authenticated');
-
-    try {
-      const { error } = await supabase
-        .from('UserFavoriteMovie')
-        .delete()
-        .eq('userId', user.id)
-        .eq('movieId', movieId);
-
-      if (error) throw error;
-
-      setFavorites(prev => prev.filter(movie => movie.id !== movieId));
-    } catch (error) {
-      console.error('Error removing from favorites:', error);
-      throw error;
-    }
-  }, [user]);
-
   const toggleFavorite = useCallback(
     async (movie) => {
-      const movieId = movie.id;
-      if (isFavorite(movieId)) {
-        await removeFromFavorites(movieId);
-        return false;
-      } else {
-        await addToFavorites(movie);
-        return true;
+      if (!user) throw new Error('User not authenticated');
+
+      const alreadyFavorite = isFavorite(movie.id);
+      try {
+        if (alreadyFavorite) {
+          // Send DELETE request to backend
+          const res = await fetch(`${API_BASE}/users/${user.id}/favorites/${movie.id}`, {
+            method: 'DELETE',
+          });
+          if (!res.ok && res.status !== 204) throw new Error('Failed to remove favorite');
+          setFavorites(prev => prev.filter(m => m.id !== movie.id));
+          return false;
+        } else {
+          // Send POST request to backend
+          const res = await fetch(`${API_BASE}/users/${user.id}/favorites`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ movieId: movie.id }),
+          });
+          if (!res.ok) throw new Error('Failed to add favorite');
+          setFavorites(prev => [...prev, movie]);
+          return true;
+        }
+      } catch (error) {
+        console.error('Error toggling favorite:', error);
+        return isFavorite(movie.id); // keep previous state
       }
     },
-    [isFavorite, addToFavorites, removeFromFavorites]
+    [user, isFavorite]
   );
 
   useEffect(() => {

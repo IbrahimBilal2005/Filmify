@@ -8,19 +8,73 @@ const prisma = new PrismaClient();
 
 app.use(express.json());
 
-// 🔧 Slugify for clean URLs
-function slugify(text) {
-  return text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-}
-
-// Helper to include full movie details
+// Helper for full movie data
 const movieInclude = {
   genre: true,
   director: true,
   actors: {
-    include: { actor: true }
-  }
+    include: { actor: true },
+  },
 };
+
+// ==============================
+// DAO Layer
+// ==============================
+
+const FavoriteDAO = {
+  async getFavoritesByUserId(userId) {
+    // Remove parseInt validation - accept UUID strings
+    if (!userId) throw new Error('Invalid userId');
+
+    return prisma.userFavoriteMovie.findMany({
+      where: { userId: userId }, // Use userId directly (string/UUID)
+      include: {
+        movie: {
+          include: {
+            genre: true,
+            director: true,
+            actors: {
+              include: {
+                actor: true
+              }
+            }
+          }
+        }
+      }
+    });
+  },
+
+  async upsertFavorite(userId, movieId) {
+    return prisma.userFavoriteMovie.upsert({
+      where: {
+        userId_movieId: { userId, movieId },
+      },
+      update: {},
+      create: { userId, movieId },
+    });
+  },
+};
+
+// ==============================
+// Service Layer
+// ==============================
+
+const FavoriteService = {
+  async getUserFavorites(userId) {
+    const favorites = await FavoriteDAO.getFavoritesByUserId(userId);
+    return favorites.map((f) => f.movie);
+  },
+
+  async addOrUpdateFavorite(userId, movieId) {
+    return FavoriteDAO.upsertFavorite(userId, movieId);
+  },
+};
+
+// ==============================
+// Favorite Routes (use router)
+// ==============================
+const favoriteRoutes = require('./src/routes/favoriteRoutes');
+app.use('/', favoriteRoutes);
 
 // ==============================
 // Movies
@@ -39,35 +93,16 @@ app.get('/movies', async (req, res) => {
 
 // Search movies by title
 app.get('/movies/search', async (req, res) => {
-  console.log('✅ /movies/search route loaded');
-
-  const rawQuery = req.query.query;
-  const query = rawQuery?.toString().trim();
-
-  console.log('🔍 Incoming search query:', query);
-
-  if (!query) {
-    return res.status(400).json({ error: 'Missing query parameter' });
-  }
+  const query = req.query.query?.toString().trim();
+  if (!query) return res.status(400).json({ error: 'Missing query parameter' });
 
   try {
     const results = await prisma.movie.findMany({
       where: {
-        title: {
-          contains: query,
-          mode: 'insensitive'
-        }
+        title: { contains: query, mode: 'insensitive' },
       },
-      include: {
-        genre: true,
-        director: true,
-        actors: {
-          include: { actor: true }
-        }
-      }
+      include: movieInclude,
     });
-
-    console.log(`🎬 Found ${results.length} result(s) for "${query}"`);
 
     if (results.length === 0) {
       return res.status(404).json({ error: 'Movie not found' });
@@ -75,7 +110,7 @@ app.get('/movies/search', async (req, res) => {
 
     res.json(results);
   } catch (error) {
-    console.error('❌ GET /movies/search error:', error);
+    console.error('GET /movies/search error:', error);
     res.status(500).json({ error: 'Something went wrong', details: error.message });
   }
 });
@@ -85,64 +120,13 @@ app.get('/movies/:slug', async (req, res) => {
   try {
     const movie = await prisma.movie.findUnique({
       where: { slug: req.params.slug },
-      include: movieInclude
+      include: movieInclude,
     });
 
     if (!movie) return res.status(404).json({ error: 'Movie not found' });
     res.json(movie);
   } catch (error) {
     console.error('GET /movies/:slug error:', error);
-    res.status(500).json({ error: 'Something went wrong', details: error.message });
-  }
-});
-
-
-
-
-
-// ==============================
-// Favorites
-// ==============================
-
-// Get user's favorite movies
-app.get('/users/:id/favorites', async (req, res) => {
-  try {
-    const favorites = await prisma.userFavoriteMovie.findMany({
-      where: { userId: parseInt(req.params.id) },
-      include: {
-        movie: {
-          include: movieInclude
-        }
-      }
-    });
-
-    const movies = favorites.map(f => f.movie);
-    res.json(movies);
-  } catch (error) {
-    console.error('GET /users/:id/favorites error:', error);
-    res.status(500).json({ error: 'Something went wrong', details: error.message });
-  }
-});
-
-// Add movie to user favorites
-app.post('/users/:id/favorites', async (req, res) => {
-  const { movieId } = req.body;
-  const userId = parseInt(req.params.id);
-
-  if (!movieId) return res.status(400).json({ error: 'Missing movieId in body' });
-
-  try {
-    const fav = await prisma.userFavoriteMovie.upsert({
-      where: {
-        userId_movieId: { userId, movieId }
-      },
-      update: {},
-      create: { userId, movieId }
-    });
-
-    res.status(201).json(fav);
-  } catch (error) {
-    console.error('POST /users/:id/favorites error:', error);
     res.status(500).json({ error: 'Something went wrong', details: error.message });
   }
 });
