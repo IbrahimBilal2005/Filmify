@@ -11,29 +11,18 @@ import {
   TouchableWithoutFeedback,
   Keyboard
 } from 'react-native';
-import { supabase } from '../api/supabaseClient';
+import { useAuth } from '../hooks/useAuth';
 
 export default function SignupScreen({ navigation }) {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { signup, loading, error } = useAuth();
 
-    const handleSignup = async () => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
-
-    if (error) {
-        alert(error.message);
-        return;
-    }
-
-    // Immediately log in after signup (no confirmation required)
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) {
-        alert(sessionError.message);
-    } else {
-        console.log("Signup & login successful");
-    }
-    };
-
+  const handleSignup = async () => {
+    const data = await signup(email, password);
+    if (!data) return;
+    console.log('Signup successful');
+  };
 
   return (
     <KeyboardAvoidingView
@@ -64,9 +53,13 @@ export default function SignupScreen({ navigation }) {
               placeholderTextColor="#aaa"
             />
 
-            <TouchableOpacity style={styles.button} onPress={handleSignup}>
-              <Text style={styles.buttonText}>Sign Up</Text>
+            <TouchableOpacity style={styles.button} onPress={handleSignup} disabled={loading}>
+              <Text style={styles.buttonText}>{loading ? 'Signing Up...' : 'Sign Up'}</Text>
             </TouchableOpacity>
+
+            {error ? (
+              <Text style={{ color: 'red', textAlign: 'center', marginBottom: 10 }}>{error}</Text>
+            ) : null}
 
             <Text style={styles.link} onPress={() => navigation.navigate('Login')}>
               Already have an account? <Text style={styles.linkBold}>Log in</Text>

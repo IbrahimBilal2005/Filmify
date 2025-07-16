@@ -11,25 +11,17 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
-import { supabase } from '../api/supabaseClient';
+import { useAuth } from '../hooks/useAuth';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { login, loading, error } = useAuth();
 
   const handleLogin = async () => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) {
-        alert(error.message);
-        return;
-      }
-
-      // Session is handled by AppNavigator via onAuthStateChange
-    } catch {
-      alert('Unexpected error occurred. Please try again.');
-    }
+    const data = await login(email, password);
+    if (!data) return;
+    console.log('Login successful');
   };
 
   return (
@@ -61,9 +53,13 @@ export default function LoginScreen({ navigation }) {
               placeholderTextColor="#aaa"
             />
 
-            <TouchableOpacity style={styles.button} onPress={handleLogin}>
-              <Text style={styles.buttonText}>Login</Text>
+            <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+              <Text style={styles.buttonText}>{loading ? 'Logging In...' : 'Login'}</Text>
             </TouchableOpacity>
+
+            {error && (
+              <Text style={{ color: 'red', textAlign: 'center', marginBottom: 10 }}>{error}</Text>
+            )}
 
             <Text style={styles.link} onPress={() => navigation.navigate('Signup')}>
               Don’t have an account? <Text style={styles.linkBold}>Sign up</Text>
