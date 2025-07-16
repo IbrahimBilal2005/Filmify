@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,85 +12,46 @@ import {
   Alert,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { supabase } from '../api/supabaseClient';
+import { useFavorites } from '../hooks/useFavorites'; // Import your existing hook
 
 const { width } = Dimensions.get('window');
 const posterWidth = width / 2 - 24;
 
 const FavoritesScreen = () => {
-  const [favorites, setFavorites] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [user, setUser] = useState(null);
   const navigation = useNavigation();
 
-  const fetchUserAndFavorites = async () => {
+    const { 
+    favorites, 
+    loading, 
+    user, 
+    refreshFavorites 
+  } = useFavorites();
+
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
     try {
-      const { data, error: userError } = await supabase.auth.getSession();
-      const user = data?.session?.user;
-
-      if (userError || !user) {
-        console.warn('Could not fetch user:', userError?.message);
-        Alert.alert('Error', 'Please log in to view favorites');
-        setLoading(false);
-        return;
-      }
-
-      setUser(user);
-
-      const { data: favData, error } = await supabase
-        .from('UserFavoriteMovie')
-        .select(`
-          movie:movieId (
-            id, 
-            title, 
-            poster, 
-            overview, 
-            trailerUrl, 
-            genre:genreId(name), 
-            director:directorId(name), 
-            rating, 
-            releaseYear,
-            actors:MovieActor(actor:actorId(name))
-          )
-        `)
-        .eq('userId', user.id);
-
-      if (error) {
-        console.error('Fetch favorites error:', error.message);
-        Alert.alert('Error', 'Failed to load favorites');
-      } else {
-        const moviesList = favData.map(entry => entry.movie).filter(Boolean);
-        setFavorites(moviesList);
-      }
+      await refreshFavorites();
     } catch (error) {
-      console.error('Error in fetchUserAndFavorites:', error);
-      Alert.alert('Error', 'Something went wrong');
+      console.error('Error refreshing favorites:', error);
+      Alert.alert('Error', 'Failed to refresh favorites');
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
-  };
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchUserAndFavorites();
-  }, []);
-
-  const handleFavoriteChange = (movieId, isNowFavorite) => {
-    setFavorites(prev =>
-      isNowFavorite ? prev : prev.filter(movie => movie.id !== movieId)
-    );
-  };
+  }, [refreshFavorites]);
 
   const goToMovieCard = (movie) => {
     navigation.navigate('MovieDetails', { movie });
   };
 
+  // Refresh favorites when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      fetchUserAndFavorites();
-    }, [])
+      if (user) {
+        refreshFavorites();
+      }
+    }, [user, refreshFavorites])
   );
 
   const renderMovieTile = ({ item }) => (
@@ -109,6 +70,7 @@ const FavoritesScreen = () => {
     </TouchableOpacity>
   );
 
+  // Show loading state
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -118,6 +80,26 @@ const FavoritesScreen = () => {
     );
   }
 
+  // Show login prompt if user is not authenticated
+  if (!user) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyIcon}>🔐</Text>
+        <Text style={styles.emptyTitle}>Please Log In</Text>
+        <Text style={styles.emptySubtitle}>
+          You need to be logged in to view your favorites
+        </Text>
+        <TouchableOpacity
+          style={styles.goBackButton}
+          onPress={() => navigation.navigate('Login')} // Adjust navigation as needed
+        >
+          <Text style={styles.goBackButtonText}>Go to Login</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Show empty state if no favorites
   if (favorites.length === 0) {
     return (
       <View style={styles.emptyContainer}>
