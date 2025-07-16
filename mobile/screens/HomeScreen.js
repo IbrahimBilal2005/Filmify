@@ -1,29 +1,14 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { FlatList, ActivityIndicator, View, StyleSheet, Dimensions } from 'react-native';
+
+import React, { useRef, useState } from 'react';
+import { FlatList, ActivityIndicator, View, StyleSheet, Dimensions, Text } from 'react-native';
 import MovieCard from '../components/MovieCard';
+import { useMovies } from '../hooks/useMovies';
 
 const { height } = Dimensions.get('window');
 
 const HomeScreen = () => {
-  const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { movies, loading, error } = useMovies();
   const [visibleIndex, setVisibleIndex] = useState(0);
-
-  const fetchMovies = async () => {
-    try {
-      const response = await fetch('http://10.0.0.130:3000/movies'); // Update as needed
-      const data = await response.json();
-      setMovies(data);
-    } catch (error) {
-      console.error('Error fetching movies:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMovies();
-  }, []);
 
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems.length > 0) {
@@ -35,6 +20,14 @@ const HomeScreen = () => {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color="#fff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.loading}>
+        <Text style={{ color: '#fff' }}>Error: {error}</Text>
       </View>
     );
   }

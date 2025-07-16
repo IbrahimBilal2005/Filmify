@@ -1,10 +1,47 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Dimensions } from 'react-native';
+
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, Dimensions, ActivityIndicator } from 'react-native';
+import { useMovies } from '../hooks/useMovies';
 
 const { width } = Dimensions.get('window');
 
 const MovieDetailsScreen = ({ route }) => {
-  const { movie } = route.params;
+  const { movie: initialMovie, slug } = route.params;
+  const { getMovieBySlug, loading, error } = useMovies();
+  const [movie, setMovie] = useState(initialMovie || null);
+
+  useEffect(() => {
+    if (!movie && slug) {
+      (async () => {
+        const fetchedMovie = await getMovieBySlug(slug);
+        setMovie(fetchedMovie);
+      })();
+    }
+  }, [movie, slug, getMovieBySlug]);
+
+  if (loading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color="#fff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.loading}>
+        <Text style={{ color: '#fff' }}>Error: {error}</Text>
+      </View>
+    );
+  }
+
+  if (!movie) {
+    return (
+      <View style={styles.loading}>
+        <Text style={{ color: '#fff' }}>Movie not found.</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -76,6 +113,12 @@ const styles = StyleSheet.create({
   metaValue: {
     color: '#eee',
     fontWeight: '600',
+  },
+  loading: {
+    flex: 1,
+    backgroundColor: '#111',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
