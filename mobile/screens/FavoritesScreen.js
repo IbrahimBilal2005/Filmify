@@ -19,8 +19,9 @@ const posterWidth = width / 2 - 24;
 
 const FavoritesScreen = () => {
   const navigation = useNavigation();
-
-    const { 
+  
+  // Use your existing useFavorites hook instead of direct Supabase queries
+  const { 
     favorites, 
     loading, 
     user, 
@@ -40,6 +41,11 @@ const FavoritesScreen = () => {
       setRefreshing(false);
     }
   }, [refreshFavorites]);
+
+  const handleFavoriteChange = (movieId, isNowFavorite) => {
+    // This might not be needed since useFavorites handles state updates
+    // but keeping it for consistency with your existing code
+  };
 
   const goToMovieCard = (movie) => {
     navigation.navigate('MovieDetails', { movie });
@@ -120,6 +126,9 @@ const FavoritesScreen = () => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <Text style={styles.favoritesTitle}>Favorites ({favorites.length})</Text>
+      </View>
       <FlatList
         data={favorites}
         renderItem={renderMovieTile}
@@ -143,6 +152,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#111',
+    paddingTop: 60,
+  },
+  headerContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  favoritesTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,
@@ -193,7 +212,7 @@ const styles = StyleSheet.create({
   },
   gridContent: {
     paddingHorizontal: 12,
-    paddingTop: 40,
+    paddingTop: 10,
     paddingBottom: 40,
   },
   columnWrapper: {
@@ -218,4 +237,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FavoritesScreen;
+export default FavoritesScreen
