@@ -19,9 +19,9 @@ Just scroll, favorite, and let the perfect movie find you.
 <div align="center">
   <table>
     <tr>
-      <td><img src="images/IMG_5980.PNG" alt="Home Screen" width="300"/></td>
-      <td><img src="images/IMG_5981.PNG" alt="Search Screen" width="300"/></td>
-      <td><img src="images/IMG_5978.PNG" alt="Favorites Screen" width="300"/></td>
+      <td><img src="images/home.PNG" alt="Home Screen" width="300"/></td>
+      <td><img src="images/search.PNG" alt="Search Screen" width="300"/></td>
+      <td><img src="images/fav.PNG" alt="Favorites Screen" width="300"/></td>
     </tr>
     <tr>
       <td align="center">Home</td>
