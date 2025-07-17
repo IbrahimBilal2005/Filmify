@@ -41,6 +41,35 @@ export const useMovies = () => {
     }
   }, []);
 
+  const [genres, setGenres] = useState([]);
+
+  const getAllGenres = useCallback(async () => {
+    try {
+        const res = await fetch(`${API_BASE}/genres`);
+        if (!res.ok) throw new Error('Failed to fetch genres');
+        const data = await res.json();
+        setGenres(data);
+    } catch (err) {
+        console.error(err);
+    }
+  }, []);
+
+  const getMoviesByGenre = useCallback(async (genreId) => {
+    setLoading(true);
+    setError(null);
+    try {
+        const res = await fetch(`${API_BASE}/movies/genre/${genreId}`);
+        if (!res.ok) throw new Error('Failed to fetch movies by genre');
+        const data = await res.json();
+        setMovies(data);
+    } catch (err) {
+        setError(err.message);
+        setMovies([]);
+    } finally {
+        setLoading(false);
+    }
+  }, []);
+
   // Get a movie by slug
   const getMovieBySlug = useCallback(async (slug) => {
     setLoading(true);
@@ -64,10 +93,13 @@ export const useMovies = () => {
 
   return {
     movies,
+    genres,
     loading,
     error,
     fetchMovies,
     searchMovies,
     getMovieBySlug,
+    getAllGenres,
+    getMoviesByGenre,
   };
 };

@@ -1,5 +1,16 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Image, Keyboard, View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import {
+  Image,
+  Keyboard,
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  Dimensions,
+  ScrollView,
+} from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useMovies } from '../hooks/useMovies';
 import { useRecentSearches } from '../hooks/useRecentSearches';
@@ -9,21 +20,32 @@ const { width } = Dimensions.get('window');
 const posterWidth = width / 2 - 24;
 
 const SearchScreen = () => {
-  const { movies, searchMovies, loading, error } = useMovies();
+  const {
+    movies,
+    genres,
+    loading,
+    error,
+    searchMovies,
+    getMoviesByGenre,
+    getAllGenres,
+  } = useMovies();
   const { recent, saveSearch, user, refreshRecent } = useRecentSearches();
   const [query, setQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const [selectedGenre, setSelectedGenre] = useState(null);
   const inputRef = useRef(null);
   const navigation = useNavigation();
 
+  useEffect(() => {
+    getAllGenres();
+  }, [getAllGenres]);
 
-
-  // Reset search state if Search tab is pressed again
   useFocusEffect(
     useCallback(() => {
       const unsubscribe = navigation.addListener('tabPress', () => {
         setShowResults(false);
         setQuery('');
+        setSelectedGenre(null);
       });
       return unsubscribe;
     }, [navigation])
@@ -31,6 +53,7 @@ const SearchScreen = () => {
 
   const handleSearch = async (text) => {
     setQuery(text);
+    setSelectedGenre(null);
     if (text.trim().length > 0) {
       setShowResults(true);
       await searchMovies(text);
@@ -39,10 +62,18 @@ const SearchScreen = () => {
     }
   };
 
+  const handleGenrePress = async (genreId) => {
+    setQuery('');
+    setShowResults(true);
+    setSelectedGenre(genreId);
+    await getMoviesByGenre(genreId);
+  };
+
   const handleSubmit = async () => {
     if (query.trim().length > 0) {
-      const matchedMovie = movies.find(m => m.title.toLowerCase().includes(query.toLowerCase()));
-      
+      const matchedMovie = movies.find((m) =>
+        m.title.toLowerCase().includes(query.toLowerCase())
+      );
       if (matchedMovie && user) {
         await saveSearch(matchedMovie.id);
         await refreshRecent();
@@ -64,8 +95,14 @@ const SearchScreen = () => {
       style={styles.posterCard}
       onPress={() => handleMoviePress(item)}
     >
-      <Image source={{ uri: item.poster }} style={styles.poster} resizeMode="cover" />
-      <Text style={styles.posterTitle} numberOfLines={2}>{item.title}</Text>
+      <Image
+        source={{ uri: item.poster }}
+        style={styles.poster}
+        resizeMode="cover"
+      />
+      <Text style={styles.posterTitle} numberOfLines={2}>
+        {item.title}
+      </Text>
     </TouchableOpacity>
   );
 
@@ -74,7 +111,11 @@ const SearchScreen = () => {
       style={styles.dropdownItem}
       onPress={() => handleMoviePress(item)}
     >
-      <Image source={{ uri: item.poster }} style={styles.dropdownPoster} resizeMode="cover" />
+      <Image
+        source={{ uri: item.poster }}
+        style={styles.dropdownPoster}
+        resizeMode="cover"
+      />
       <View style={styles.dropdownInfo}>
         <Text style={styles.dropdownTitle}>{item.title}</Text>
         <Text style={styles.dropdownYear}>{item.releaseYear || ''}</Text>
@@ -84,6 +125,27 @@ const SearchScreen = () => {
 
   return (
     <View style={styles.container}>
+      {/* Genre Scroll Filter */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.genreScroll}
+      >
+        {genres.map((genre) => (
+          <TouchableOpacity
+            key={genre.id}
+            style={[
+              styles.genreButton,
+              selectedGenre === genre.id && styles.genreButtonActive,
+            ]}
+            onPress={() => handleGenrePress(genre.id)}
+          >
+            <Text style={styles.genreButtonText}>{genre.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Search Bar */}
       <TextInput
         ref={inputRef}
         style={styles.searchBar}
@@ -97,6 +159,7 @@ const SearchScreen = () => {
         clearButtonMode="while-editing"
       />
 
+      {/* Results or Recent */}
       {showResults ? (
         <View style={styles.resultsContainer}>
           {loading ? (
@@ -116,7 +179,9 @@ const SearchScreen = () => {
         </View>
       ) : (
         <View style={styles.recentContainer}>
-          <Text style={styles.recentTitle}>Recently Searched: ({recent.length})</Text>
+          <Text style={styles.recentTitle}>
+            Recently Searched: ({recent.length})
+          </Text>
           {recent.length === 0 ? (
             <Text style={styles.emptyText}>No recent searches.</Text>
           ) : (
@@ -140,6 +205,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#111',
     paddingTop: 60,
+  },
+  genreScroll: {
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    maxHeight: 42,
+  },
+  genreButton: {
+    backgroundColor: '#333',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 32,
+  },
+  genreButtonActive: {
+    backgroundColor: '#3B82F6',
+  },
+  genreButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+    lineHeight: 18,
   },
   searchBar: {
     backgroundColor: '#222',

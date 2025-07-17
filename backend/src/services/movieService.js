@@ -12,6 +12,14 @@ const MovieService = {
   async searchMovies(query) {
     return await MovieDAO.searchMovies(query);
   },
+
+  async getAllGenres() {
+    return await MovieDAO.getAllGenres();
+  },
+
+  async getMoviesByGenre(genreId) {
+    return await MovieDAO.getMoviesByGenre(genreId);
+  },
 };
 
 module.exports = MovieService;

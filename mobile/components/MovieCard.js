@@ -6,7 +6,6 @@ import {
   Dimensions,
   TouchableOpacity,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useNavigation } from '@react-navigation/native';
@@ -34,21 +33,18 @@ const MovieCard = ({ movie, isVisible, onFavoriteChange }) => {
   };
 
   const handleToggleFavorite = async () => {
-    if (!user) return;
-
-    if (actionLoading) return;
+    if (!user || actionLoading) return;
     setActionLoading(true);
 
     try {
-        const isNowFavorite = await toggleFavorite(movie);
-        onFavoriteChange?.(movie.id, isNowFavorite);
+      const isNowFavorite = await toggleFavorite(movie);
+      onFavoriteChange?.(movie.id, isNowFavorite);
     } catch (error) {
-        console.error('Toggle favorite error:', error);
+      console.error('Toggle favorite error:', error);
     } finally {
-        setActionLoading(false);
+      setActionLoading(false);
     }
-};
-
+  };
 
   return (
     <ScrollView style={styles.card} contentContainerStyle={styles.content}>
@@ -73,27 +69,31 @@ const MovieCard = ({ movie, isVisible, onFavoriteChange }) => {
         <View style={styles.metadata}>
           {movie.genre?.name && (
             <Text style={styles.metaText}>
-              🎬 Genre: <Text style={styles.metaValue}>{movie.genre.name}</Text>
+              <Text>🎬 Genre: </Text>
+              <Text style={styles.metaValue}>{movie.genre.name}</Text>
             </Text>
           )}
           {movie.releaseYear && (
             <Text style={styles.metaText}>
-              📅 Year: <Text style={styles.metaValue}>{movie.releaseYear}</Text>
+              <Text>📅 Year: </Text>
+              <Text style={styles.metaValue}>{movie.releaseYear}</Text>
             </Text>
           )}
           {movie.rating && (
             <Text style={styles.metaText}>
-              ⭐ Rating: <Text style={styles.metaValue}>{movie.rating.toFixed(1)}</Text>
+              <Text>⭐ Rating: </Text>
+              <Text style={styles.metaValue}>{movie.rating.toFixed(1)}</Text>
             </Text>
           )}
           {movie.director?.name && (
             <Text style={styles.metaText}>
-              🎥 Director: <Text style={styles.metaValue}>{movie.director.name}</Text>
+              <Text>🎥 Director: </Text>
+              <Text style={styles.metaValue}>{movie.director.name}</Text>
             </Text>
           )}
           {movie.actors?.length > 0 && (
             <Text style={styles.metaText}>
-              👥 Cast:{' '}
+              <Text>👥 Cast: </Text>
               <Text style={styles.metaValue}>
                 {movie.actors.map((a) => a.actor?.name).join(', ')}
               </Text>
@@ -102,18 +102,17 @@ const MovieCard = ({ movie, isVisible, onFavoriteChange }) => {
         </View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={[styles.button, actionLoading && styles.buttonDisabled]} 
+          <TouchableOpacity
+            style={[styles.button, actionLoading && styles.buttonDisabled]}
             onPress={handleToggleFavorite}
             disabled={actionLoading}
           >
             <Text style={styles.buttonText}>
-              {actionLoading 
-                ? '⏳ Loading...' 
-                : movieIsFavorite 
-                  ? '💔 Remove Favorite' 
-                  : '❤️ Add to Favorites'
-              }
+              {actionLoading
+                ? '⏳ Loading...'
+                : movieIsFavorite
+                  ? '💔 Remove Favorite'
+                  : '❤️ Add to Favorites'}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.button} onPress={goToDetails}>

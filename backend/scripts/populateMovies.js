@@ -10,8 +10,8 @@ function slugify(text) {
   return text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 }
 
-const ENDPOINTS = ['popular', 'top_rated', 'now_playing', 'upcoming']; 
-const PAGES_PER_ENDPOINT = 20;
+const ENDPOINTS = ['popular', 'top_rated', 'now_playing', 'upcoming'];
+const PAGES_PER_ENDPOINT = 1;
 
 const fetchAndStoreMovies = async () => {
   try {

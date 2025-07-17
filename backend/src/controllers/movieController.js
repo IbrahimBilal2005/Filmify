@@ -36,6 +36,26 @@ const MovieController = {
       res.status(500).json({ error: 'Something went wrong', details: error.message });
     }
   },
+
+  async getAllGenres(req, res) {
+    try {
+        const genres = await MovieService.getAllGenres();
+        res.json(genres);
+    } catch (error) {
+        console.error('GET /genres error:', error);
+        res.status(500).json({ error: 'Something went wrong', details: error.message });
+    }
+  },
+
+  async getMoviesByGenre(req, res) {
+    try {
+        const movies = await MovieService.getMoviesByGenre(parseInt(req.params.id));
+        res.json(movies);
+    } catch (error) {
+        console.error('GET /movies/genre/:id error:', error);
+        res.status(500).json({ error: 'Something went wrong', details: error.message });
+    }
+  },
 };
 
 module.exports = MovieController;

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, Dimensions, ActivityIndicator } from 'react-native';
 import { useMovies } from '../hooks/useMovies';
@@ -30,7 +29,7 @@ const MovieDetailsScreen = ({ route }) => {
   if (error) {
     return (
       <View style={styles.loading}>
-        <Text style={{ color: '#fff' }}>Error: {error}</Text>
+        <Text style={styles.errorText}>Error: {error}</Text>
       </View>
     );
   }
@@ -38,7 +37,7 @@ const MovieDetailsScreen = ({ route }) => {
   if (!movie) {
     return (
       <View style={styles.loading}>
-        <Text style={{ color: '#fff' }}>Movie not found.</Text>
+        <Text style={styles.errorText}>Movie not found.</Text>
       </View>
     );
   }
@@ -54,26 +53,46 @@ const MovieDetailsScreen = ({ route }) => {
       <Text style={styles.title}>{movie.title}</Text>
 
       {/* Metadata */}
-      <View style={styles.metadata}>
+        <View style={styles.metadata}>
         {movie.genre?.name && (
-          <Text style={styles.metaText}>🎬 Genre: <Text style={styles.metaValue}>{movie.genre.name}</Text></Text>
+            <Text style={styles.metaText}>
+            <Text>🎬 Genre: </Text>
+            <Text style={styles.metaValue}>{movie.genre.name}</Text>
+            </Text>
         )}
         {movie.releaseYear && (
-          <Text style={styles.metaText}>📅 Year: <Text style={styles.metaValue}>{movie.releaseYear}</Text></Text>
+            <Text style={styles.metaText}>
+            <Text>📅 Year: </Text>
+            <Text style={styles.metaValue}>{movie.releaseYear}</Text>
+            </Text>
         )}
         {movie.rating && (
-          <Text style={styles.metaText}>⭐ Rating: <Text style={styles.metaValue}>{movie.rating.toFixed(1)}</Text></Text>
+            <Text style={styles.metaText}>
+            <Text>⭐ Rating: </Text>
+            <Text style={styles.metaValue}>{movie.rating.toFixed(1)}</Text>
+            </Text>
         )}
         {movie.director?.name && (
-          <Text style={styles.metaText}>🎥 Director: <Text style={styles.metaValue}>{movie.director.name}</Text></Text>
+            <Text style={styles.metaText}>
+            <Text>🎥 Director: </Text>
+            <Text style={styles.metaValue}>{movie.director.name}</Text>
+            </Text>
         )}
         {movie.actors?.length > 0 && (
-          <Text style={styles.metaText}>👥 Cast: <Text style={styles.metaValue}>{movie.actors.map(a => a.actor?.name).join(', ')}</Text></Text>
+            <Text style={styles.metaText}>
+            <Text>👥 Cast: </Text>
+            <Text style={styles.metaValue}>
+                {movie.actors.map(a => a.actor?.name).join(', ')}
+            </Text>
+            </Text>
         )}
         {movie.overview && (
-          <Text style={styles.metaText}>📝 Overview: <Text style={styles.metaValue}>{movie.overview}</Text></Text>
+            <Text style={styles.metaText}>
+            <Text>📝 Overview: </Text>
+            <Text style={styles.metaValue}>{movie.overview}</Text>
+            </Text>
         )}
-      </View>
+        </View>
     </ScrollView>
   );
 };
@@ -84,7 +103,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingTop: 60, // ⬅️ Match vertical spacing
+    paddingTop: 60,
     paddingBottom: 40,
     paddingHorizontal: 20,
   },
@@ -119,6 +138,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#111',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  errorText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
 

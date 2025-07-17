@@ -58,11 +58,11 @@ export default function LoginScreen({ navigation }) {
             </TouchableOpacity>
 
             {error && (
-              <Text style={{ color: 'red', textAlign: 'center', marginBottom: 10 }}>{error}</Text>
+              <Text style={styles.errorText}>{error}</Text>
             )}
 
             <Text style={styles.link} onPress={() => navigation.navigate('Signup')}>
-              Don’t have an account? <Text style={styles.linkBold}>Sign up</Text>
+              Don't have an account? <Text style={styles.linkBold}>Sign up</Text>
             </Text>
           </View>
         </TouchableWithoutFeedback>
@@ -122,5 +122,10 @@ const styles = StyleSheet.create({
   linkBold: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginBottom: 10,
   },
 });
