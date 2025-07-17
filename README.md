@@ -1,4 +1,4 @@
-# Filmify - Coming Soon 
+# Filmy - Coming Soon 
 
 ## 🍿🎬 You know that feeling...
 
