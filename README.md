@@ -22,11 +22,13 @@ Just scroll, favorite, and let the perfect movie find you.
       <td><img src="images/home.PNG" alt="Home Screen" width="300"/></td>
       <td><img src="images/search.PNG" alt="Search Screen" width="300"/></td>
       <td><img src="images/fav.PNG" alt="Favorites Screen" width="300"/></td>
+      <td><img src="images/login.PNG" alt="Login Screen" width="300"/></td>
     </tr>
     <tr>
       <td align="center">Home</td>
       <td align="center">Search</td>
       <td align="center">Favorites</td>
+      <td align="center">Login</td>
     </tr>
   </table>
 </div>
